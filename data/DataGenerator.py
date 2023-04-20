@@ -3,9 +3,9 @@ import pandas as pd
 
 import os
 import tensorflow as tf
-import keras.preprocessing.image_dataset
-from keras.utils.data_utils import Sequence
-from keras.preprocessing.image import array_to_img, img_to_array
+import tensorflow.python.keras.utils as kerasutils
+from tensorflow.python.keras.utils.data_utils import Sequence
+from keras_preprocessing.image import array_to_img, img_to_array
 from math import ceil
 #from tensorflow import convert_to_tensor
 import constants
@@ -68,7 +68,7 @@ def CreateDataset(image_directory: [str] = None, label_csv_filename: str = None)
     labelFile = pd.read_csv(label_csv_filename)
     labels = np.reshape(labelFile.to_numpy()[:, 1], [-1, 1])
 
-    dataset = keras.preprocessing.image_dataset.image_dataset_from_directory(image_directory, labels="inferred", label_mode = "categorical", image_size=IMAGE_SIZE, batch_size = None, shuffle = True, seed = constants.RANDOM_SEED)
+    dataset = tf.keras.utils.image_dataset_from_directory(image_directory, labels="inferred", label_mode = "categorical", image_size=IMAGE_SIZE, batch_size = None, shuffle = True, seed = constants.RANDOM_SEED)
     # С inferred labels объединение с лэйблами не нужно
     #dataset = tf.data.Dataset.zip((dataset, tf.data.Dataset.from_tensor_slices(tf.convert_to_tensor(labels.astype(np.float32)))))
     #print(*[i for i in dataset.take(1).as_numpy_iterator()])
