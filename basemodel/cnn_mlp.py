@@ -57,7 +57,7 @@ class CNNMLP(Model):
 
         self.logger = FitLogCallback.FitCallback()
         self.csv_logger = CSVLogger(filename=self.checkpoint_manager.directory + "_training_log.csv", append=True)
-        self.lr_logger = ReduceLROnPlateau(monitor = "loss", factor = 0.5, patience = 10, verbose = 2,
+        self.lr_logger = ReduceLROnPlateau(monitor = "val_loss", factor = 0.5, patience = 10, verbose = 2,
                                            min_delta = 0.001, cooldown = 2, min_lr = 1.0e-06)
         self.loss_tracker = Mean(name = "loss")
         self.accuracy_metric = CategoricalAccuracy()

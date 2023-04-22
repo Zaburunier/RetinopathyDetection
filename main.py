@@ -2,8 +2,8 @@ import numpy as np
 import os
 os.environ["CUDA_DIR"] = "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.2"
 
-from basemodel2.cnn import BuildKerasCNN
-from basemodel2 import cnn_mlp
+from basemodel.cnn import BuildKerasCNN
+from basemodel import cnn_mlp
 from data import DataGenerator
 from constants import RANDOM_SEED, BATCH_SIZE, IMAGE_SIZE
 

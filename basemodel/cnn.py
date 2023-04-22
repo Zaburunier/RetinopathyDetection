@@ -8,7 +8,7 @@ from tensorflow.keras.initializers import Zeros, RandomNormal, Constant, GlorotU
 from tensorflow.keras.regularizers import L2
 from tensorflow.keras.layers import BatchNormalization, Rescaling, RandomCrop, RandomFlip
 
-import basemodel2.cnn_mlp
+import basemodel.cnn_mlp
 from constants import IMAGE_SIZE, BATCH_SIZE, RANDOM_SEED
 
 def BuildKerasCNN():
@@ -144,6 +144,6 @@ def BuildKerasCNN():
                           kernel_regularizer=L2(l2 = 1e-02),
                           ) (fc_2)
 
-    result = basemodel2.cnn_mlp.CNNMLP(inputs = inputs, outputs = mlp_predictor, name = "cnn_mlp")
+    result = basemodel.cnn_mlp.CNNMLP(inputs = inputs, outputs = mlp_predictor, name = "cnn_mlp")
     return result
 
