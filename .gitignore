@@ -2,4 +2,5 @@
 /data/img_split.7z
 /data/img_split_trunc.7z
 /data/img/
+/data/img_*/
 /cnn_mlp_checkpoint/

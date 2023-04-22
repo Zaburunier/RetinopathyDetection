@@ -5,6 +5,10 @@ def main():
     #DataTransformer.PrepareData("D:\Study\Магистратура\Проект\Структуризация\Датасеты\Retinopathy (Kaggle)\Retinopathy (Kaggle)",
     #                            "D:\Study\Магистратура\Проект\main\data\img",
     #                            256)
+    DataTransformer.OrganizeImages("D:/Study/Magister/CourseworkProject/main/data/img_trunc/",
+                                   "D:\\Study\\Magister\\CourseworkProject\\main\\data\\img_trunc\\labels.csv")
+    return
+
     DataTransformer.OrganizeImages("D:/Study/Magister/CourseworkProject/main/data/img/", "D:\\Study\\Magister\\CourseworkProject\\main\\data\\new_trainLabels.csv")
     TransformCSVLabels(["D:/Study/Magister/CourseworkProject/main/data/img/train/0. No DR/",
                         "D:/Study/Magister/CourseworkProject/main/data/img/train/1. Mild DR/",

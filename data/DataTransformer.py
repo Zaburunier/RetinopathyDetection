@@ -1,8 +1,10 @@
 import PIL.Image
+import pandas as pd
 from PIL import Image
 import os, os.path
 import numpy as np
 from pandas import read_csv, DataFrame
+import time
 
 class DataTransformer:
     '''
@@ -144,3 +146,49 @@ class DataTransformer:
             dummy = sourceFolder + "train/" + classSubfolders[labels[index]] + imageFilenames[index]
             image.save(dummy)
             print(imageFilenames[index], " organize finished.", sep = "")
+
+
+    @staticmethod
+    def BalanceImages(sourceFolder: str, labelCsvFilename : str, destinationFolder: str, weights):
+        '''
+        Удаление части данных до полного совпадения количества образцов в классах
+        :param sourceFolder: Исходная папка с данными (где лежат все данные вперемешку)
+        :param labelCsvFilename: Файл с метками для каждого образца
+        :param destinationFolder: Папка, где будут сложены данные (сгруппированы по папкам) и файл с метками для усечённой выборки
+        :param weights: Список желаемых весов (относительное число образцов)
+        :return:
+        '''
+        labelFile = read_csv(labelCsvFilename)
+        labelFile = labelFile.reset_index(drop=True)
+        counts = labelFile.value_counts("level")
+        classSubfolders = ["0. No DR/", "1. Mild DR/", "2. Moderate DR/", "3. Severe DR/", "4. Profilerative DR/"]
+
+        weights = np.array(weights)
+        weights = weights / sum(weights)
+        weights = ((weights / min(weights)) * min(counts.to_numpy())).astype(np.int32)
+
+        newLabelFile = pd.DataFrame(columns =["image", "level"])
+
+        counter = 0
+        for i in range(5):
+            temp1 = labelFile.loc[labelFile["level"] == i]
+            filenames = temp1["image"].to_numpy()
+            filenames = np.random.choice(filenames, weights[i], replace = False)
+            for filename in filenames:
+                counter = counter + 1
+                dirCounter = len([i for i in os.listdir(destinationFolder)])
+                if dirCounter != counter - 1:
+                    dummy = True
+
+                if not os.path.isfile(sourceFolder + filename + ".jpeg"):
+                    print("INVALID FILE")
+
+                print("#", counter, "/", dirCounter, " Working with ", filename, "...", sep="")
+                img = Image.open(sourceFolder + filename + ".jpeg")
+                img.save(destinationFolder + filename + ".jpeg")
+                dummy = labelFile.loc[labelFile["image"] == filename]
+                newLabelFile = pd.concat([newLabelFile, dummy])
+                #time.sleep(0.1)
+
+        newLabelFile.to_csv(destinationFolder + "labels.csv", index = False)
+

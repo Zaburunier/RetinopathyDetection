@@ -34,9 +34,9 @@ def main():
 
     model = BuildKerasCNN()
 
-    trainDataset = DataGenerator.CreateDataset("D:/Study/Magister/CourseworkProject/main/data/img/train",
+    trainDataset = DataGenerator.CreateDataset("D:/Study/Magister/CourseworkProject/main/data/img_trunc/train",
                                                "D:\\Study\\Magister\\CourseworkProject\\main\\data\\trainImgLabels.csv")
-    testDataset = DataGenerator.CreateDataset("D:/Study/Magister/CourseworkProject/main/data/img/test",
+    testDataset = DataGenerator.CreateDataset("D:/Study/Magister/CourseworkProject/main/data/img_trunc/test",
                                               "D:\\Study\\Magister\\CourseworkProject\\main\\data\\testImgLabels.csv")
     # Веса посчитал вручную исходя из соотношения числа образцов в обучающей выборке
     #weights = {0: 0.6806, 1: 7.1915, 2: 3.3041, 3: 20.582, 4: 24.7759}
