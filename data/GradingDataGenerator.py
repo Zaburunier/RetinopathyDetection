@@ -64,7 +64,7 @@ class DataGenerator(Sequence):
         pass
 
 
-def CreateDataset(image_directory: [str] = None, label_csv_filename: str = None):
+def CreateGradingDataset(image_directory: [str] = None, label_csv_filename: str = None):
     labelFile = pd.read_csv(label_csv_filename)
     labels = np.reshape(labelFile.to_numpy()[:, 1], [-1, 1])
 

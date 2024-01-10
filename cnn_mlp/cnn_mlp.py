@@ -18,47 +18,26 @@ from tensorflow.keras.optimizers import SGD
 import tensorflow as tf
 import keras as keras
 
-LEARNING_RATE = 2.0e-03
+LEARNING_RATE = 2e-03
 MOMENTUM = 0.9
-EPSILON = 1.0e-03
-DECAY = 1.0e-02
+EPSILON = 1.0e-04
+DECAY = 1.0e-04
 AMSGRAD = True
 
 class CNNMLP(Model):
     def __init__(self, *args, **kwargs):
         super(CNNMLP, self).__init__(*args, **kwargs)
 
-        '''
-        cnnNetwork = BuildKerasCNN()
-        self.network = Sequential(name="cnn_mlp")
-        self.network.add(cnnNetwork)
-        
-        mlp_predictor = Dense(5,
-                              name="fc_predict",
-                              activation=None,
-                              kernel_initializer=RandomNormal(mean=0.0, stddev=1e-02, seed=RANDOM_SEED),
-                              bias_initializer=Zeros(),
-                              kernel_regularizer=L2(l2 = 1e-03))
-        self.network.add(mlp_predictor)
-        '''
         self.optimizer = Adam(learning_rate=LEARNING_RATE, beta_1=MOMENTUM, epsilon = EPSILON, amsgrad = AMSGRAD, decay = DECAY)#SGD(learning_rate = LEARNING_RATE, momentum = MOMENTUM, nesterov = True, decay = DECAY)#
         self.epoch_counter = Variable(initial_value=0, dtype=int32, trainable=False)
         self.checkpoint = train.Checkpoint(model = self, optimizer = self.optimizer, epoch_counter=self.epoch_counter)
         self.checkpoint_manager = train.CheckpointManager(checkpoint = self.checkpoint, directory = "cnn_mlp_checkpoint", max_to_keep = 10)
         print(f"CNNMLP last checkpoint: {self.checkpoint_manager.latest_checkpoint}")
-        #print(f"CNNMLP last checkpoint path: {self.checkpoint_manager.restore_or_initialize()}")
         self.checkpoint.restore(self.checkpoint_manager.latest_checkpoint)
-
-        #if (self.checkpoint_manager.latest_checkpoint is None):
-            #print("Assigned bias (0 for class #0 and 1 for others)")
-            #lastLayersWeights = self.get_layer("fc_predict").get_weights()
-            #lastLayersWeights[1] = Variable([0.0, 1.0, 1.0, 1.0, 1.0], dtype = tf.float32, trainable = True)
-            #self.getlayer("fc_predict").set_weights(lastLayersWeights)
-
         self.logger = FitLogCallback.FitCallback()
         self.csv_logger = CSVLogger(filename=self.checkpoint_manager.directory + "_training_log.csv", append=True)
-        self.lr_logger = ReduceLROnPlateau(monitor = "val_loss", factor = 0.5, patience = 10, verbose = 2,
-                                           min_delta = 0.001, cooldown = 2, min_lr = 1.0e-06)
+        self.lr_logger = ReduceLROnPlateau(monitor = "val_loss", factor = 0.5, patience = 30, verbose = 2,
+                                           min_delta = 0.0001, cooldown = 5, min_lr = 1.0e-06)
         self.loss_tracker = Mean(name = "loss")
         self.accuracy_metric = CategoricalAccuracy()
         self.recallClass0 = Recall(class_id=0, name="Recall-0")
@@ -99,6 +78,7 @@ class CNNMLP(Model):
               jit_compile=None,
               **kwargs):
         #self.optimizer.learning_rate.assign(LEARNING_RATE)
+        #self.optimizer.learning_rate.assign(2e-04)
         #self.optimizer.momentum.assign(MOMENTUM)
         #self.optimizer.epsilon = EPSILON
         #self.optimizer.amsgrad = AMSGRAD
@@ -175,6 +155,7 @@ class CNNMLP(Model):
     def train_step(self, data):
         #tf.print(":)")
         x, y, weights = data
+        #x, y = data
 
         if (tf.config.functions_run_eagerly()):
             xData = x.numpy()
@@ -185,7 +166,7 @@ class CNNMLP(Model):
             y_pred = self(x, training=True)  # Forward pass
             #f.print("Network respond:\n", y_pred)
             # Compute our own loss
-            loss = self.compiled_loss(y, y_pred, sample_weight = weights, regularization_losses = self.losses)#loss(y, y_pred, weights)
+            loss = self.compiled_loss(y, y_pred, regularization_losses = self.losses, sample_weight = weights)#loss(y, y_pred, weights)
 
         if (tf.config.functions_run_eagerly()):
             yPredData = y_pred.numpy()
