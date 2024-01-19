@@ -7,8 +7,8 @@ def main():
     imgs = [i for i in os.listdir("/data/eyepacs/img_trunc/")]
     #labelFile = pd.read_csv("D:/Study/Magister/CourseworkProject/main/data/img_trunc/labels.csv")
 
-    #for label in labelFile.iterrows():
-    #    filename = label[1]["image"]
+    #for segmentation in labelFile.iterrows():
+    #    filename = segmentation[1]["image"]
     #    if (imgs.index(filename + ".jpeg") == -1):
     #        print(f"File {filename} not found")
 

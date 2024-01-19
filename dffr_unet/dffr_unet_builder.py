@@ -7,9 +7,8 @@ from tensorflow.keras.activations import relu
 from tensorflow.keras.initializers import Zeros, HeNormal, HeUniform
 from tensorflow.keras.regularizers import L2
 
-from .dffr_unet import DFFRUNet
-from .RepeatFiltersLayer import RepeatFiltersLayer
-
+import dffr_unet
+import RepeatFiltersLayer
 
 def BuildDFFRUnet():
     '''
@@ -33,7 +32,7 @@ def BuildDFFRUnet():
     upsamplingLayer5 = BuildDoubleConvBlock(upsamplingLayer4, 4, (3, 3), True, "us_5")
     output = Softmax() (upsamplingLayer5)
 
-    result = dffr_unet.dffr_unet.DFFRUNet(inputs = inputs, outputs = output, name = "dffr_unet")
+    result = dffr_unet.DFFRUNet(inputs = inputs, outputs = output, name = "dffr_unet")
     return result
 
 

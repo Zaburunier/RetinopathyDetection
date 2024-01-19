@@ -6,6 +6,9 @@ class RepeatFiltersLayer(tf.keras.layers.Layer):
 
         self.tileRatio = tf.constant([1, 1, 1, nRepeats], dtype = tf.int32)
 
+    def get_config(self):
+        return {"tileRatio" : self.tileRatio.numpy()}
+
 
     def compute_output_shape(self, inputShape):
         inputShape = tf.TensorShape(inputShape).as_list()

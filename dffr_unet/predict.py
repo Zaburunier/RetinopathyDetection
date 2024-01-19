@@ -9,6 +9,7 @@ import dffr_unet_builder
 def predict_label(imagePath: str):
     model = dffr_unet_builder.BuildDFFRUnet()
     model.compile(jit_compile = False, metrics=model.metrics)
+    model.save("dffr.keras")
 
     img = Image.open(imagePath)
     img.load()
@@ -19,5 +20,12 @@ def predict_label(imagePath: str):
 
 
 if __name__ == "__main__":
-    label = predict_label("D:\\Study\\Magister\\CourseworkProject\\main\\data\\idrid\\test\\img\\IDRiD_62.jpg")
+    tf.config.run_functions_eagerly(True)
+    segmentation = predict_label("D:\\Study\\Magister\\CourseworkProject\\main\\data\\idrid\\train\\img\\IDRiD_22.jpg")
+    segmentation_opaque = segmentation[:, :, :, :3]
+    segmentation_ma_ha = segmentation[:, :, :, 0]
+    segmentation_he_se = segmentation[:, :, :, 1]
+    segmentation_od = segmentation[:, :, :, 2]
+    segmentation_us = segmentation[:, :, :, 3]
+
     dummy = True

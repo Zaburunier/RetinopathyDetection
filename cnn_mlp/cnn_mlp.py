@@ -21,7 +21,7 @@ import tensorflow as tf
 import tensorflow_addons as tfa
 import keras as keras
 
-LEARNING_RATE = 4e-04
+LEARNING_RATE = 2.5e-04
 MOMENTUM = 0.9
 EPSILON = 1.001e-04
 DECAY = 1.001e-04
@@ -106,7 +106,7 @@ class CNNMLP(Model):
                                         loss_weights=loss_weights, weighted_metrics=weighted_metrics,
                                         run_eagerly=run_eagerly, steps_per_execution=steps_per_execution,
                                         jit_compile=jit_compile, **kwargs)
-
+*
         print(f"Compiled model with optimizer: {str(self.optimizer)}, "
               f"loss function: {self.loss}, "
               f"and metrics: {self.metrics}")

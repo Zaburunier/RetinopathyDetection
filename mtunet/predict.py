@@ -19,5 +19,5 @@ def predict_label(imagePath: str):
 
 
 if __name__ == "__main__":
-    label = predict_label("D:\\Study\\Magister\\CourseworkProject\\main\\data\\idrid\\train\\img\\IDRiD_02.jpg")
+    label = predict_label("D:\\Study\\Magister\\CourseworkProject\\main\\data\\idrid\\train\\img\\IDRiD_22.jpg")
     dummy = True

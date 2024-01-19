@@ -48,7 +48,7 @@ class Evaluater:
         pred_class = []
         with torch.no_grad():
             for batch_idx, batch in enumerate(self.test_loader):
-                data, label = batch["data"].to(self.device), batch["label"].to(self.device)
+                data, label = batch["data"].to(self.device), batch["segmentation"].to(self.device)
                 output = model(data)
 
                 pred = output.argmax(dim=1, keepdim=True)

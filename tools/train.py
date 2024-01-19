@@ -49,7 +49,7 @@ class TrainManager:
             for batch_idx, batch in enumerate(self.train_loader, self.batch_start + 1):
                 self.train_index += 1
                 self.model.train()
-                data, label = batch["data"].to(self.device), batch["label"].to(self.device)
+                data, label = batch["data"].to(self.device), batch["segmentation"].to(self.device)
 
                 self.optimizer.zero_grad()
                 output = self.model(data)
@@ -91,7 +91,7 @@ class TrainManager:
         with torch.no_grad():
             for batch_idx, batch in enumerate(self.test_loader):
                 self.test_index += 1
-                data, label = batch["data"].to(self.device), batch["label"].to(self.device)
+                data, label = batch["data"].to(self.device), batch["segmentation"].to(self.device)
                 output = self.model(data)
                 loss = self.criterion(output, label)
                 test_loss.append(loss.item())

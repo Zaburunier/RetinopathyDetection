@@ -11,8 +11,8 @@ from tensorflow.keras.metrics import Mean, AUC, BinaryIoU
 import tensorflow_addons as tfa
 
 from tools import FitLogCallback
-from dffr_unet import RepeatableRandomZoom
-from dffr_unet import RepeatableRandomTranslation
+import RepeatableRandomZoom
+import RepeatableRandomTranslation
 from constants import RANDOM_SEED, IMAGE_SIZE, BATCH_SIZE
 
 LEARNING_RATE = 1e-03
@@ -336,19 +336,13 @@ class DFFRUNet(Model):
         :param imgTensor: Исходное изображение сетчатки
         :return:
         '''
-        preparedImgTensor = 4 * imgTensor - 4 * tfa.image.gaussian_filter2d(imgTensor, 15, 10) + 0.5
+        gaussianImgTensor = tfa.image.gaussian_filter2d(imgTensor, 8, 10)
+        preparedImgTensor = 4 * imgTensor - 4 * gaussianImgTensor + 0.5
         if (tf.config.functions_run_eagerly()):
             imgData = imgTensor.numpy()
-            gray = tf.image.adjust_contrast(imgTensor, 0.5)
-            grayData = gray.numpy()
-            blurred = tfa.image.gaussian_filter2d(imgTensor, 15, 1)
-            blurredData = blurred.numpy()
-            blurredGray = tf.image.adjust_contrast(blurred, 0.5)
-            blurredGrayData = blurredGray.numpy()
-            contrast = tf.image.adjust_contrast(imgData, 1.4)
-            contrastData = contrast.numpy()
-            diffData = 4 * imgData - 4 * blurredData + 0.5
-
+            gaussianData = gaussianImgTensor.numpy()
+            substractionData = imgData - gaussianData
+            normalizedSubstractionData = 4 * substractionData
             resultData = preparedImgTensor.numpy()
         return preparedImgTensor
 

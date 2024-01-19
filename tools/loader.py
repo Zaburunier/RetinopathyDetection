@@ -72,7 +72,7 @@ class ODIR5K(Dataset):
         target, filename = self.df.iloc[identifier]
         img = self.img_transform(Image.open(filename))
         label = torch.tensor(target)
-        out = {"data": img, "label": label}
+        out = {"data": img, "segmentation": label}
         return out
 
     def make_balanced(self):

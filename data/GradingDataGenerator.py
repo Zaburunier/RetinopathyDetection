@@ -38,7 +38,7 @@ class DataGenerator(Sequence):
         for i in range(self.length):
             filename = image_filenames[i]
             self.images[i, :, :, :] = np.asarray(Image.open(filename))
-            self.labels[i] = labelFile.loc[labelFile['image'] == filename, "label"]
+            self.labels[i] = labelFile.loc[labelFile['image'] == filename, "segmentation"]
 
 
 
