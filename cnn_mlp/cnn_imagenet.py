@@ -5,10 +5,10 @@ from tensorflow.keras.initializers import Zeros, RandomNormal, Constant, GlorotU
 from tensorflow.keras.regularizers import L2
 from tensorflow.keras.layers import BatchNormalization
 
-import cnn_mlp.cnn_mlp
+import cnn_mlp
 from constants import IMAGE_SIZE, BATCH_SIZE, RANDOM_SEED
 
-def BuildKerasCNN() -> cnn_mlp.cnn_mlp.CNNMLP:
+def BuildCNNMLPModel() -> cnn_mlp.CNNMLP:
     '''
     Метод создания конволюшки для выделения признаков (на время отладки цикла обучения здесь полная сеть)
     :return:
@@ -208,6 +208,6 @@ def BuildKerasCNN() -> cnn_mlp.cnn_mlp.CNNMLP:
                           bias_regularizer=L2(l2 = 1e-03),
                           ) (relu_fc2)
 
-    result = cnn_mlp.cnn_mlp.CNNMLP(inputs = inputs, outputs = mlp_predictor, name ="cnn_mlp")
+    result = cnn_mlp.CNNMLP(inputs = inputs, outputs = mlp_predictor, name ="cnn_mlp")
     return result
 

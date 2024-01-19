@@ -1,6 +1,7 @@
-/data/img.7z
-/data/img_split.7z
-/data/img_split_trunc.7z
-/data/img/
-/data/img_*/
-/cnn_mlp_checkpoint/
+data/
+cnn_mlp_checkpoint/
+mtunet_checkpoint/
+dffr_unet_checkpoint/
+cnn_mlp_checkpoint_training_log.csv
+mtunet_checkpoint_training_log.csv
+dffr_unet_checkpoint_training_log.csv

@@ -52,8 +52,9 @@ class FitCallback(Callback):
         print(f"\t\t(ОБУЧЕНИЕ) Получили на вход бэтч #{batch}, переданные аргументы:\n{logs}")
 
     def on_train_batch_end(self, batch, logs=None):
+        #return
         #if (batch % 10 != 0):
-            #return
+        #    return
 
         #print("...Training: end of batch {}; got log:\n{}".format(batch, logs))
         #, dt = {time.time() - self.last_train_batch_end_time}
@@ -70,6 +71,7 @@ class FitCallback(Callback):
         print(f"\t\t(ОЦЕНКА) Получили на вход бэтч #{batch}, переданные аргументы:\n{logs}")
 
     def on_test_batch_end(self, batch, logs=None):
+        return
         if (batch % 10 != 0):
             return
         
