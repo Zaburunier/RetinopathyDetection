@@ -7,33 +7,40 @@ from tensorflow.keras.activations import relu
 from tensorflow.keras.initializers import Zeros, HeNormal, HeUniform
 from tensorflow.keras.regularizers import L2
 
-import dffr_unet
-import RepeatFiltersLayer
+#import dffr_unet
+#import dffr_unet.dffr_unet
+#import dffr_unet.RepeatFiltersLayer
 
-def BuildDFFRUnet():
-    '''
-    Метод создания сети типа
-    :return:
-    '''
-    inputs = Input(shape=(IMAGE_SIZE[0], IMAGE_SIZE[1], 3), batch_size = BATCH_SIZE, name="input")
+from dffr_unet import dffr_unet_model, RepeatFiltersLayer
 
-    (downsamplingLayer1, downsamplingResLayer1) = BuildDownSamplingBlock(inputs, 64, 64, (3, 3), 2, "ds_1")
-    (downsamplingLayer2, downsamplingResLayer2) = BuildDownSamplingBlock(downsamplingLayer1, 64, 128, (3, 3), 2, "ds_2")
-    (downsamplingLayer3, downsamplingResLayer3) = BuildDownSamplingBlock(downsamplingLayer2, 128, 256, (3, 3), 2, "ds_3")
-    #(downsamplingLayer4, downsamplingResLayer4) = BuildDownSamplingBlock(downsamplingLayer3, 256, 512, (3, 3), 2, "ds_4")
+class dffr_unet_builder:
+    @staticmethod
+    def BuildDFFRUnet():
+        '''
+        Метод создания сети типа
+        :return:
+        '''
+        inputs = Input(shape=(IMAGE_SIZE[0], IMAGE_SIZE[1], 3), batch_size=BATCH_SIZE, name="input")
 
-    encodedConvLayer = BuildConvBlock(downsamplingLayer3, 1024, (3, 3), 1, "bneck_1")
-    encodedConvLayer = BuildConvBlock(encodedConvLayer, 1024, (3, 3), 1, "bneck_2")
+        (downsamplingLayer1, downsamplingResLayer1) = BuildDownSamplingBlock(inputs, 64, 64, (3, 3), 2, "ds_1")
+        (downsamplingLayer2, downsamplingResLayer2) = BuildDownSamplingBlock(downsamplingLayer1, 64, 128, (3, 3), 2,
+                                                                             "ds_2")
+        (downsamplingLayer3, downsamplingResLayer3) = BuildDownSamplingBlock(downsamplingLayer2, 128, 256, (3, 3), 2,
+                                                                             "ds_3")
+        # (downsamplingLayer4, downsamplingResLayer4) = BuildDownSamplingBlock(downsamplingLayer3, 256, 512, (3, 3), 2, "ds_4")
 
-    #upsamplingLayer1 = BuildUpSamplingBlock(encodedConvLayer, downsamplingResLayer4, 512, (3, 3), 2, True, "us_1")
-    upsamplingLayer2 = BuildUpSamplingBlock(encodedConvLayer, downsamplingResLayer3, 256, (3, 3), 2, True, "us_2")
-    upsamplingLayer3 = BuildUpSamplingBlock(upsamplingLayer2, downsamplingResLayer2, 128, (3, 3), 2, True, "us_3")
-    upsamplingLayer4 = BuildUpSamplingBlock(upsamplingLayer3, downsamplingResLayer1, 64, (3, 3), 2, True, "us_4")
-    upsamplingLayer5 = BuildDoubleConvBlock(upsamplingLayer4, 4, (3, 3), True, "us_5")
-    output = Softmax() (upsamplingLayer5)
+        encodedConvLayer = BuildConvBlock(downsamplingLayer3, 1024, (3, 3), 1, "bneck_1")
+        encodedConvLayer = BuildConvBlock(encodedConvLayer, 1024, (3, 3), 1, "bneck_2")
 
-    result = dffr_unet.DFFRUNet(inputs = inputs, outputs = output, name = "dffr_unet")
-    return result
+        # upsamplingLayer1 = BuildUpSamplingBlock(encodedConvLayer, downsamplingResLayer4, 512, (3, 3), 2, True, "us_1")
+        upsamplingLayer2 = BuildUpSamplingBlock(encodedConvLayer, downsamplingResLayer3, 256, (3, 3), 2, True, "us_2")
+        upsamplingLayer3 = BuildUpSamplingBlock(upsamplingLayer2, downsamplingResLayer2, 128, (3, 3), 2, True, "us_3")
+        upsamplingLayer4 = BuildUpSamplingBlock(upsamplingLayer3, downsamplingResLayer1, 64, (3, 3), 2, True, "us_4")
+        upsamplingLayer5 = BuildDoubleConvBlock(upsamplingLayer4, 4, (3, 3), True, "us_5")
+        output = Softmax()(upsamplingLayer5)
+
+        result = dffr_unet_model.DFFRUNet(inputs=inputs, outputs=output, name="dffr_unet")
+        return result
 
 
 def BuildDownSamplingBlock(currentLayer, currentFilters, endFilters, kernelSize, poolingSize = 1, baseName = "ds"):

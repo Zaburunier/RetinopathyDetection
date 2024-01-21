@@ -291,12 +291,13 @@ class MTUnet(Model):
             xData = x.numpy()
 
         y = self(x, training=False)  # Forward pass
+        grade, segmentation = y
         if (tf.config.functions_run_eagerly()):
-            yData = y.numpy()
-            maHaPredData = yData[:, :, :, 0]
-            heSePredData = yData[:, :, :, 1]
-            odPredData = yData[:, :, :, 2]
-            usPredData = yData[:, :, :, 3]
+            segmentationData = segmentation.numpy()
+            maHaPredData = segmentationData[:, :, :, 0]
+            heSePredData = segmentationData[:, :, :, 1]
+            odPredData = segmentationData[:, :, :, 2]
+            usPredData = segmentationData[:, :, :, 3]
 
         return y
 

@@ -106,7 +106,7 @@ class CNNMLP(Model):
                                         loss_weights=loss_weights, weighted_metrics=weighted_metrics,
                                         run_eagerly=run_eagerly, steps_per_execution=steps_per_execution,
                                         jit_compile=jit_compile, **kwargs)
-*
+
         print(f"Compiled model with optimizer: {str(self.optimizer)}, "
               f"loss function: {self.loss}, "
               f"and metrics: {self.metrics}")
@@ -229,7 +229,12 @@ class CNNMLP(Model):
 
     @function(jit_compile=False)
     def predict_step(self, data):
-        x = data
+        if isinstance(data, tuple):
+            x, y_true = data
+        else:
+            x = data
+
+        x /= 255.0
 
         if (tf.config.functions_run_eagerly()):
             xData = x.numpy()
@@ -239,7 +244,11 @@ class CNNMLP(Model):
         if (tf.config.functions_run_eagerly()):
             yData = y.numpy()
 
-        return y
+        if isinstance(data, tuple):
+            return [y_true, y]
+        else:
+            return y
+
 
 
     def SetupImageNetWeights(self):

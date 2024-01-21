@@ -1,26 +1,17 @@
 import constants
-from .dffr_unet_builder  import BuildDFFRUnet
-from data import SegmentationDataGenerator
+import data
+import dffr_unet.dffr_unet_builder
 
 import tensorflow as tf
 import tensorflow_addons as tfa
 
 
 def train_dffr_unet():
-    dffrunet = BuildDFFRUnet()
+    dffrunet = dffr_unet.dffr_unet_builder.dffr_unet_builder.BuildDFFRUnet()
 
-    trainData, testData = SegmentationDataGenerator.CreateSegmentationDatasets("D:/Study/Magister/CourseworkProject/main/data/idrid/")
+    trainData, testData = data.SegmentationDataGenerator.CreateSegmentationDatasets("D:/Study/Magister/CourseworkProject/main/data/idrid/")
 
     dffrunet.compile(jit_compile = False, metrics=dffrunet.metrics)
-
-    '''
-    nEpochs = 200
-    dffrunet.fit(currentLayer=trainData[:, :, :, :3], y=trainData[:, :, :, 3:], batch_size=constants.BATCH_SIZE,
-               callbacks=[dffrunet.csv_logger, dffrunet.lr_logger],
-               verbose=2, initial_epoch=dffrunet.epoch_counter.read_value().numpy(),
-               epochs=dffrunet.epoch_counter.read_value().numpy() + nEpochs, workers=2,
-               validation_data=(testData[:, :, :, :3], testData[:, :, :, 3:]))
-    '''
 
     trainDataset = tf.data.Dataset.from_tensor_slices(trainData, "train")
     testDataset = tf.data.Dataset.from_tensor_slices(testData, "test")

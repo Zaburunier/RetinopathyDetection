@@ -6,7 +6,7 @@ from tensorflow.keras.regularizers import L2
 from tensorflow.keras.layers import BatchNormalization, GlobalAveragePooling2D, GlobalMaxPooling2D
 from tensorflow.keras.layers import DepthwiseConv2D, Activation, Multiply, Concatenate
 
-from . import cnn_mlp
+import cnn_mlp.cnn_mlp
 from constants import IMAGE_SIZE, BATCH_SIZE, RANDOM_SEED
 import layers.DepthwiseMaxPooling
 import layers.DepthwiseAveragePooling
@@ -82,7 +82,7 @@ def BuildCNNMLPModel(useBinaryOutput = False):
                       bias_regularizer=L2(l2 = 1e-03),
                       ) (layer)
 
-    result = cnn_mlp.CNNMLP(useBinaryLabels = useBinaryOutput, inputs = inputs, outputs = layer, name ="cnn_mlp")
+    result = cnn_mlp.cnn_mlp.CNNMLP(useBinaryLabels = useBinaryOutput, inputs = inputs, outputs = layer, name ="cnn_mlp")
     return result
 
 

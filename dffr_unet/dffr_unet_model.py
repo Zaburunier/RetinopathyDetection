@@ -1,4 +1,3 @@
-import keras_preprocessing.image
 import tensorflow as tf
 from tensorflow import Variable, train, int32, function
 from tensorflow.keras.models import Model
@@ -11,8 +10,9 @@ from tensorflow.keras.metrics import Mean, AUC, BinaryIoU
 import tensorflow_addons as tfa
 
 from tools import FitLogCallback
-import RepeatableRandomZoom
-import RepeatableRandomTranslation
+from dffr_unet import RepeatableRandomZoom, RepeatableRandomTranslation
+#import dffr_unet.RepeatableRandomZoom
+#import dffr_unet.RepeatableRandomTranslation
 from constants import RANDOM_SEED, IMAGE_SIZE, BATCH_SIZE
 
 LEARNING_RATE = 1e-03
@@ -34,7 +34,7 @@ class DFFRUNet(Model):
         self.optimizer = Adam(learning_rate=LEARNING_RATE, beta_1=MOMENTUM, epsilon=EPSILON, amsgrad=AMSGRAD, decay=DECAY)
         self.epoch_counter = Variable(initial_value=0, dtype=int32, trainable=False)
         self.checkpoint = train.Checkpoint(model=self, optimizer=self.optimizer, epoch_counter=self.epoch_counter)
-        self.checkpoint_manager = train.CheckpointManager(checkpoint=self.checkpoint, directory="../dffr_unet_checkpoint",
+        self.checkpoint_manager = train.CheckpointManager(checkpoint=self.checkpoint, directory="..\\dffr_unet_checkpoint",
                                                           max_to_keep=40)
         print(f"DFFRUnet last checkpoint: {self.checkpoint_manager.latest_checkpoint}")
         self.checkpoint.restore(self.checkpoint_manager.latest_checkpoint)
@@ -307,25 +307,36 @@ class DFFRUNet(Model):
 
 
     def BinarizeMasks(self, y):
-        segmentation = y
+        binarizedY = y
 
         if (tf.config.functions_run_eagerly()):
-            ma = segmentation[:, :, :, 0].numpy()
-            ha = segmentation[:, :, :, 1].numpy()
-            he = segmentation[:, :, :, 2].numpy()
-            se = segmentation[:, :, :, 3].numpy()
-            od = segmentation[:, :, :, 4].numpy()
+            ma = y[:, :, :, 0].numpy()
+            ha = y[:, :, :, 1].numpy()
+            he = y[:, :, :, 2].numpy()
+            se = y[:, :, :, 3].numpy()
+            od = y[:, :, :, 4].numpy()
+            mask = ma + ha + he + se + od
 
-        segmentation = tf.cast(segmentation > 0.0, dtype = tf.float32)
+        binarizedY = tf.cast(y > 0.0, dtype = tf.float32)
+        summedY = tf.reduce_sum(y, axis = -1)
+        softmaxedY = tf.where(tf.expand_dims(tf.reduce_any(y > 0, axis = -1), axis = -1), tf.math.softmax(y, axis = -1), y)
 
         if (tf.config.functions_run_eagerly()):
-            binarizedMa = segmentation[:, :, :, 0].numpy()
-            binarizedHa = segmentation[:, :, :, 1].numpy()
-            binarizedHe = segmentation[:, :, :, 2].numpy()
-            binarizedSe = segmentation[:, :, :, 3].numpy()
-            binarizedOd = segmentation[:, :, :, 4].numpy()
+            binarizedMa = binarizedY[:, :, :, 0].numpy()
+            binarizedHa = binarizedY[:, :, :, 1].numpy()
+            binarizedHe = binarizedY[:, :, :, 2].numpy()
+            binarizedSe = binarizedY[:, :, :, 3].numpy()
+            binarizedOd = binarizedY[:, :, :, 4].numpy()
 
-        y = segmentation
+            segmentation2Data = summedY.numpy()
+
+            binarizedMaSoftmax = softmaxedY[:, :, :, 0].numpy()
+            binarizedHaSoftmax = softmaxedY[:, :, :, 1].numpy()
+            binarizedHeSoftmax = softmaxedY[:, :, :, 2].numpy()
+            binarizedSeSoftmax = softmaxedY[:, :, :, 3].numpy()
+            binarizedOdSoftmax = softmaxedY[:, :, :, 4].numpy()
+
+        y = binarizedY
 
         return y
 
@@ -336,7 +347,7 @@ class DFFRUNet(Model):
         :param imgTensor: Исходное изображение сетчатки
         :return:
         '''
-        gaussianImgTensor = tfa.image.gaussian_filter2d(imgTensor, 8, 10)
+        gaussianImgTensor = tfa.image.gaussian_filter2d(imgTensor, 13, 8)
         preparedImgTensor = 4 * imgTensor - 4 * gaussianImgTensor + 0.5
         if (tf.config.functions_run_eagerly()):
             imgData = imgTensor.numpy()
