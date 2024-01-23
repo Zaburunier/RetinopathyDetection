@@ -1,17 +1,16 @@
 import datetime
+import math
+import os
+import time
 
 import streamlit as st
+import extra_streamlit_components as stx
+from streamlit_cropper import st_cropper
+from streamlit_image_comparison import image_comparison
 import numpy as np
 import cv2
-import pickle
-import io
-import os
-import random
-from fpdf import FPDF
-from pypdf import PdfReader
-from datetime import datetime
-import PIL
 from PIL import Image
+from PdfReportCreator import CreatePdfReport
 
 import cnn_mlp.cnn_resnet as cnn_builder
 import dffr_unet.dffr_unet_builder as unet_builder
@@ -29,142 +28,287 @@ def BuildModels():
     return (classificationModel, segmentationModel)
 
 
-def CreatePdfReport(patientCode, img, classificationModel, segmentationModel):
-    imgToScore = np.asarray(img, dtype="float32") / 255.0
-    imgToScore = 0.5 + 4 * (imgToScore - cv2.GaussianBlur(imgToScore, (0, 0), sigmaX=20))
-    imgToScore = np.expand_dims(imgToScore, axis=0) * 255.0
-    predictedLabels = classificationModel.predict(imgToScore, batch_size = 1)
+def CropImg(img : Image) -> Image:
+    return st_cropper(img, box_color="#00FF00", aspect_ratio=(1, 1)).resize(constants.IMAGE_SIZE)
+
+
+def DrawImageScoring(img : Image, container = None):
+    imgArray = np.asarray(img, dtype="float32") / 255.0
+    imgArray = 0.5 + 4 * (imgArray - cv2.GaussianBlur(imgArray, (0, 0), sigmaX=20))
+    imgArray = np.expand_dims(imgArray, axis=0) * 255.0
+    predictedLabels = classifier.predict(imgArray, batch_size=1)
 
     probability = np.max(predictedLabels)
     formattedProbability = f"{((1 - predictedLabels[0][0]) * 100.0):.2f}"
     label = np.argmax(predictedLabels)
-
-    predictedSegmentationMaps = segmentationModel.predict(np.expand_dims(np.asarray(img, dtype = "float32"), axis = 0), batch_size=1)
-
-    result = FPDF()
-    result.add_page()
-
-    result.add_font("DejaVu", "", "DejaVuSerif.ttf", uni = True)
-    result.add_font("DejaVu", "B", "DejaVuSerif-Bold.ttf", uni=True)
-    result.add_font("DejaVu", "I", "DejaVuSerif-BoldItalic.ttf", uni=True)
-
-    result.set_font("DejaVu", "B", size = 18)
-    result.cell(200, 10, txt = "Отчёт по проведённой диагностике", ln = 1, align = "C")
-
-    result.ln(10)
-    result.set_font("DejaVu", "", size=12)
-    result.cell(200, 5, txt = f"Исследуемый пациент: {patientCode}", ln = 1,align = "L")
-    result.cell(200, 5, txt = f"Дата и время обращения к системе: {datetime.now()}", ln = 1, align = "L")
-
-    result.ln(10)
-    result.set_font("DejaVu", "I", size=14)
-    result.cell(200, 5, txt = "Системная оценка заболевания", ln = 1, align = "L")
-
-    result.ln(5)
-    result.set_font("DejaVu", "", size=12)
     if label == 0:
-        result.cell(200, 5,
-                    txt=f"Вероятность наличия заболевания оценивается системой в {formattedProbability} %",
-                    ln=1, align="L")
+        if container is None:
+            if probability < 0.2:
+                st.success(f"Вероятность наличия заболевания оценивается системой в {formattedProbability} %")
+            else:
+                st.warning(f"Вероятность наличия заболевания оценивается системой в {formattedProbability} %")
+        else:
+            if probability < 0.2:
+                container.success(f"Вероятность наличия заболевания оценивается системой в {formattedProbability} %")
+            else:
+                container.warning(f"Вероятность наличия заболевания оценивается системой в {formattedProbability} %")
     else:
-        result.cell(200, 5,
-                    txt=f"Наиболее вероятная стадия заболевания - {label} ({(probability * 100.0):.3f} %).",
-                    ln=1, align="L")
-        result.cell(200, 5,
-                    txt=f"Оцененная системой вероятность наличия заболевания: {formattedProbability} %",
-                    ln=1, align="L")
+        if container is None:
+            st.error(f"Вероятность наличия заболевания оценивается системой в {formattedProbability} %")
+            st.info(f"Наиболее вероятная стадия заболевания - {label} ({(probability * 100.0):.3f} %)")
+        else:
+            container.error(f"Вероятность наличия заболевания оценивается системой в {formattedProbability} %")
+            container.info(f"Наиболее вероятная стадия заболевания - {label} ({(probability * 100.0):.3f} %)")
 
-    result.ln(8)
-    result.set_font("DejaVu", "I", size=14)
-    result.cell(200, 5, txt="Обнаруженные маркеры", ln=1, align="L")
-
-    result.set_font("DejaVu", "", size=12)
-    WritePilImageToPdfReport(result, "input.png", img,
-                             15, 85, 64, 64)
-    WritePilImageToPdfReport(result, "mask_rgb.png",
-                             Image.fromarray((predictedSegmentationMaps[0, :, :, :3] * 255).astype("uint8"), mode = "RGB"),
-                             90, 85, 64, 64)
-
-    WritePilImageToPdfReport(result, "mask_ma_ha.png",
-                             Image.fromarray((predictedSegmentationMaps[0, :, :, 0] * 255).astype("uint8"), mode="L"),
-                             15, 160, 48, 48)
-
-    WritePilImageToPdfReport(result, "mask_he_se.png",
-                             Image.fromarray((predictedSegmentationMaps[0, :, :, 1] * 255).astype("uint8"), mode="L"),
-                             75, 160, 48, 48)
-
-    WritePilImageToPdfReport(result, "mask_od.png",
-                             Image.fromarray((predictedSegmentationMaps[0, :, :, 2] * 255).astype("uint8"), mode="L"),
-                             135, 160, 48, 48)
-
-    return result
+    transparentImg = np.asarray(img, dtype="float32") / 255.0
+    transparentImgMask = np.all(transparentImg < 1e-01, axis=-1, keepdims=True)
+    transparentImg = np.concatenate([transparentImg, 1.0 - transparentImgMask.astype(float)], axis=-1)
 
 
-def WritePilImageToPdfReport(report, imgName, img : Image, x, y, w, h):
-    img.save(imgName)
-    img.close()
-    report.image(imgName, x = x, y = y, w = w, h = h)
-    os.remove(imgName)
+def toggle_animation():
+    st.session_state.playLoopedMaskAnimation = not st.session_state.playLoopedMaskAnimation
+    #st.session_state.startTime = time.time_ns()
 
 
+def DrawImageSegmentation(img : Image, container = None):
+    imgArray = np.asarray(img, dtype="float32")
+    predictedSegmentationMaps = segmentator.predict(np.expand_dims(imgArray, axis=0), batch_size=1)
+
+    if container is None:
+        column1, column2, column3 = st.columns(3)
+    else:
+        column1, column2, column3 = container.columns(3)
+
+    if not st.session_state.playLoopedMaskAnimation:
+        column1.image(predictedSegmentationMaps[0, :, :, 0], "Нарушения кровеносной системы", use_column_width = "auto")
+        column2.image(predictedSegmentationMaps[0, :, :, 1], "Выделение жидкостей в сетчатку", use_column_width = "auto")
+        column3.image(predictedSegmentationMaps[0, :, :, 2], "Диск зрительного нерва", use_column_width = "auto")
+    else:
+        bloodMarkersPlaceholder = column1.empty()
+        exudatesPlaceholder = column2.empty()
+        opticalDiskPlaceholder = column3.empty()
+
+        nFrames = 50
+        timeInterval = .5 / nFrames
+        imgToInterpolate = imgArray / 255.0
+        bloodMarkersMaskToInterpolate = np.expand_dims(predictedSegmentationMaps[0, :, :, 0], axis = -1)
+        exudatesMaskToInterpolate = np.expand_dims(predictedSegmentationMaps[0, :, :, 1], axis = -1)
+        opticalDiskMaskToInterpolate = np.expand_dims(predictedSegmentationMaps[0, :, :, 2], axis = -1)
+
+        bloodMarkersMaskedImgToInterpolate = imgToInterpolate * bloodMarkersMaskToInterpolate
+        exudatesMaskedImgToInterpolate = imgToInterpolate * exudatesMaskToInterpolate
+        opticalDiskMaskedImgToInterpolate = imgToInterpolate * opticalDiskMaskToInterpolate
+
+        sinRatio = 0.375 * math.pi * 1.0e-09
+        while True:
+            t = 0.5 * (1 + math.sin(sinRatio * (time.time_ns() - st.session_state.startTime)))
+
+            bloodMarkersPlaceholder.image(
+                ((1 - t) ** 2) * bloodMarkersMaskToInterpolate +
+                2 * t * (1 - t) * bloodMarkersMaskedImgToInterpolate +
+                t * t * imgToInterpolate,
+                "Нарушения кровеносной системы", use_column_width = "auto")
+
+            exudatesPlaceholder.image(
+                ((1 - t) ** 2) * exudatesMaskToInterpolate +
+                2 * t * (1 - t) * exudatesMaskedImgToInterpolate +
+                t * t * imgToInterpolate,
+                "Выделение жидкостей в сетчатку", use_column_width = "auto")
+
+            opticalDiskPlaceholder.image(
+                ((1 - t) ** 2) * opticalDiskMaskToInterpolate +
+                2 * t * (1 - t) * opticalDiskMaskedImgToInterpolate +
+                t * t * imgToInterpolate,
+                "Диск зрительного нерва", use_column_width = "auto")
+
+            time.sleep(timeInterval)
+
+
+def HandleProcessor(selectedImgs, selectedTabId, imgProcessorFunc):
+    st.image(selectedImgs[selectedTabId], "Загруженный снимок")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        selectedImgs[selectedTabId] = CropImg(selectedImgs[selectedTabId])
+    col2.image(selectedImgs[selectedTabId], "Выделенная область")
+
+    preprocessedSelectedImage = segmentator.PrepareImage(
+        np.asarray(selectedImgs[selectedTabId]) / 255.0).numpy()
+    tempMin = np.min(preprocessedSelectedImage)
+    tempMax = np.max(preprocessedSelectedImage)
+
+    st.divider()
+    image_comparison(selectedImgs[selectedTabId].copy(),
+                     (255.0 * (preprocessedSelectedImage - tempMin) / (tempMax - tempMin)).astype("uint8"),
+                     label1="До предобработки",
+                     label2="После предобработки",
+                     width=2 * constants.IMAGE_SIZE[0])
+    st.divider()
+
+    imgProcessorFunc(selectedImgs[selectedTabId].resize(constants.IMAGE_SIZE))
+
+
+def HandleClassification(selectedImgs, selectedTabId):
+    st.image(selectedImgs[selectedTabId], "Загруженный снимок")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        selectedImgs[selectedTabId] = CropImg(selectedImgs[selectedTabId])
+    col2.image(selectedImgs[selectedTabId], "Выделенная область")
+
+    preprocessedSelectedImage = segmentator.PrepareImage(
+        np.asarray(selectedImgs[selectedTabId]) / 255.0).numpy()
+    tempMin = np.min(preprocessedSelectedImage)
+    tempMax = np.max(preprocessedSelectedImage)
+
+    DrawImageScoring(selectedImgs[selectedTabId].resize(constants.IMAGE_SIZE))
+
+    st.divider()
+    image_comparison(selectedImgs[selectedTabId].copy(),
+                     (255.0 * (preprocessedSelectedImage - tempMin) / (tempMax - tempMin)).astype("uint8"),
+                     label1="До предобработки",
+                     label2="После предобработки",
+                     width=2 * constants.IMAGE_SIZE[0])
+
+
+def HandleSegmentation(selectedImgs, selectedTabId):
+    if "playLoopedMaskAnimation" not in st.session_state:
+        st.session_state.playLoopedMaskAnimation = True
+        st.session_state.startTime = time.time_ns()
+
+    st.image(selectedImgs[selectedTabId], "Загруженный снимок")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        selectedImgs[selectedTabId] = CropImg(selectedImgs[selectedTabId])
+    col2.image(selectedImgs[selectedTabId], "Выделенная область")
+
+    preprocessedSelectedImage = segmentator.PrepareImage(
+        np.asarray(selectedImgs[selectedTabId]) / 255.0).numpy()
+    tempMin = np.min(preprocessedSelectedImage)
+    tempMax = np.max(preprocessedSelectedImage)
+
+    st.session_state.playLoopedMaskAnimation = st.toggle("Анимация наложения масок сегментации")
+    resultContainer = st.container()
+
+    st.divider()
+    image_comparison(selectedImgs[selectedTabId].copy(),
+                     (255.0 * (preprocessedSelectedImage - tempMin) / (tempMax - tempMin)).astype("uint8"),
+                     label1="До предобработки",
+                     label2="После предобработки",
+                     width=2 * constants.IMAGE_SIZE[0])
+    st.divider()
+
+    DrawImageSegmentation(selectedImgs[selectedTabId].resize(constants.IMAGE_SIZE), resultContainer)
+
+
+
+def HandleOptions(selectedImgs, selectedTabId, selectedFunction):
+    if len(selectedImgs) > 0 and selectedFunction == "Оценка стадии заболевания":
+        if selectedTabId != "None":
+            selectedTabId = int(selectedTabId)
+
+            HandleClassification(selectedImgs, selectedTabId)
+
+    if len(selectedImgs) > 0 and selectedFunction == "Сегментация маркеров заболевания":
+        if selectedTabId != "None":
+            selectedTabId = int(selectedTabId)
+
+            HandleSegmentation(selectedImgs, selectedTabId)
+
+    if len(selectedImgs) > 0 and selectedFunction == "Выгрузка отчёта":
+        if selectedTabId != "None":
+            selectedTabId = int(selectedTabId)
+
+            if "patientCode" not in st.session_state:
+                st.session_state.patientCode = "#000000"
+
+            st.session_state.patientCode = st.text_input("Код пациента", value=st.session_state.patientCode)
+
+            st.image(selectedImgs[selectedTabId], "Загруженный снимок")
+
+            col1, col2 = st.columns(2)
+
+            with col1:
+                selectedImgs[selectedTabId] = CropImg(selectedImgs[selectedTabId])
+            col2.image(selectedImgs[selectedTabId], "Выделенная область")
+
+            preprocessedSelectedImage = segmentator.PrepareImage(
+                np.asarray(selectedImgs[selectedTabId]) / 255.0).numpy()
+            tempMin = np.min(preprocessedSelectedImage)
+            tempMax = np.max(preprocessedSelectedImage)
+
+            image_comparison(selectedImgs[selectedTabId].copy(),
+                             (255.0 * (preprocessedSelectedImage - tempMin) / (tempMax - tempMin)).astype("uint8"),
+                             label1="До предобработки",
+                             label2="После предобработки",
+                             width=2 * constants.IMAGE_SIZE[0])
+
+            pdfReport = CreatePdfReport(st.session_state.patientCode,
+                                        selectedImgs[selectedTabId].resize(constants.IMAGE_SIZE), classifier,
+                                        segmentator)
+            reportBytes = pdfReport.output(name="report.pdf", dest="S").encode('latin-1')
+            st.download_button(
+                label="Загрузить отчёт",
+                data=reportBytes,
+                file_name=f"ДиагОтчёт-{st.session_state.patientCode}-{datetime.datetime.now()}.pdf",
+                mime="application/pdf")
 
 
 
 (classifier, segmentator) = BuildModels()
 
+st.session_state.lastReloadTime = time.time_ns()
+
+st.title("Проект 1491")
+st.title("Диагностика диабетической ретинопатии")
+
+loadOption = st.radio("Выберите опцию загрузки", ["Указание файла", "Указание папки с набором файлов"])
+selectedImgFilenames = []
+selectedImgs = []
+if loadOption == "Указание файла":
+    loadFullFolder = False
+
+    fileToProcessInfo = st.file_uploader("Загрузите снимок глазного дна", ["png", "jpg", "jpeg", "tif"])
+    if fileToProcessInfo is not None:
+        img = Image.open(fileToProcessInfo).resize(constants.IMAGE_SIZE)
+        img.load()
+        selectedImgs.append(img)
+        selectedImgFilenames.append(fileToProcessInfo.name)
+
+elif loadOption == "Указание папки с набором файлов":
+    loadFullFolder = True
+
+    loadPath = st.text_input("Укажите папку для загрузки")
+    maxToLoad = st.number_input("Максимальное количество файлов", value = 0)
+
+    counter = maxToLoad
+    if os.path.exists(loadPath):
+        for file in os.scandir(loadPath):
+            if (os.path.splitext(file.name)[1] in [".png", ".jpg", ".jpeg", ".tif"]):
+                img = Image.open(os.path.join(loadPath, file)).resize(constants.IMAGE_SIZE)
+                img.load()
+                selectedImgs.append(img)
+                selectedImgFilenames.append(file.name)
+
+            if (counter == 1):
+                break
+
+            counter -= 1
+
 selectedFunction = st.selectbox("Выбор системной функции",
                                 ["Оценка стадии заболевания",
                                  "Сегментация маркеров заболевания",
                                  "Выгрузка отчёта"])
-fileToProcessInfo = st.file_uploader("Загрузите снимков глазного дна", ["png", "jpg", "jpeg", "tif"])
 
-if fileToProcessInfo is not None:
-    processingCapture = Image.open(fileToProcessInfo).resize(constants.IMAGE_SIZE)
-    processingCapture.load()
+tabs = []
+for i in range(len(selectedImgs)):
+    tabs.append(stx.TabBarItemData(id=i, title = selectedImgFilenames[i], description = ""))
 
-if fileToProcessInfo is not None and selectedFunction == "Оценка стадии заболевания":
-    st.image(processingCapture, "Загруженный снимок")
+selectedTabId = stx.tab_bar(tabs)
 
-    scoringCaptureArray = np.asarray(processingCapture, dtype="float32") / 255.0
-    scoringCaptureArray = 0.5 + 4 * (scoringCaptureArray - cv2.GaussianBlur(scoringCaptureArray, (0, 0), sigmaX=20))
-    scoringCaptureArray = np.expand_dims(scoringCaptureArray, axis=0) * 255.0
-    predictedLabels = classifier.predict(scoringCaptureArray, batch_size=1)
-
-    probability = np.max(predictedLabels)
-    formattedProbability = f"{((1 - predictedLabels[0][0]) * 100.0):.2f}"
-    label = np.argmax(predictedLabels)
-    if label == 0:
-        st.write(f"Вероятность наличия заболевания оценивается системой в {formattedProbability} %")
-    else:
-        st.write(f"Наиболее вероятная стадия заболевания - {label} ({(probability * 100.0):.3f} %). <br>",
-                 f"Оцененная системой вероятность наличия заболевания: {formattedProbability} %",
-                 unsafe_allow_html = True)
-
-
-if fileToProcessInfo is not None and selectedFunction == "Сегментация маркеров заболевания":
-    segmentingCaptureArray = np.expand_dims(np.asarray(processingCapture, dtype="float32"), axis = 0)
-    predictedSegmentationMaps = segmentator.predict(segmentingCaptureArray, batch_size=1)
-
-    column1, column2, column3 = st.columns(3)
-
-    column1.image(processingCapture, "Загруженный снимок")
-    column2.image(predictedSegmentationMaps[0, :, :, :3], "Общая сегментирующая маска")
-    column3.image(predictedSegmentationMaps[0, :, :, 3], "Немаркированные области")
-
-    column1.image(predictedSegmentationMaps[0, :, :, 0], "Сегментация участков нарушения работы кровеносной системы")
-    column2.image(predictedSegmentationMaps[0, :, :, 1], "Сегментация участков с выделением жидкостей в сетчатку")
-    column3.image(predictedSegmentationMaps[0, :, :, 2], "Сегментация диска зрительного нерва")
-
-if fileToProcessInfo is not None and selectedFunction == "Выгрузка отчёта":
-    patientCode = st.text_input("Код пациента", placeholder = "#000000")
-
-    st.image(processingCapture, "Загруженный снимок")
-
-    pdfReport = CreatePdfReport(patientCode, processingCapture, classifier, segmentator)
-    reportBytes = pdfReport.output(name = "report.pdf", dest = "S").encode('latin-1')
-    st.download_button(
-        label = "Загрузить отчёт",
-        data = reportBytes,
-        file_name="report.pdf",
-        mime="application/pdf")
+HandleOptions(selectedImgs, selectedTabId, selectedFunction)
 

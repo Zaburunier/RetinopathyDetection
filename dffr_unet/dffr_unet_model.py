@@ -347,7 +347,7 @@ class DFFRUNet(Model):
         :param imgTensor: Исходное изображение сетчатки
         :return:
         '''
-        gaussianImgTensor = tfa.image.gaussian_filter2d(imgTensor, 13, 8)
+        gaussianImgTensor = tfa.image.gaussian_filter2d(imgTensor, 15, 10)
         preparedImgTensor = 4 * imgTensor - 4 * gaussianImgTensor + 0.5
         if (tf.config.functions_run_eagerly()):
             imgData = imgTensor.numpy()
