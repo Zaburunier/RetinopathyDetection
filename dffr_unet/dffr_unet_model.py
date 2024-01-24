@@ -10,9 +10,7 @@ from tensorflow.keras.metrics import Mean, AUC, BinaryIoU
 import tensorflow_addons as tfa
 
 from tools import FitLogCallback
-from dffr_unet import RepeatableRandomZoom, RepeatableRandomTranslation
-#import dffr_unet.RepeatableRandomZoom
-#import dffr_unet.RepeatableRandomTranslation
+#from dffr_unet import RepeatableRandomZoom, RepeatableRandomTranslation
 from constants import RANDOM_SEED, IMAGE_SIZE, BATCH_SIZE
 
 LEARNING_RATE = 1e-03
@@ -54,8 +52,8 @@ class DFFRUNet(Model):
 
         print(f"Initialized DFFRUnet for epoch #{self.epoch_counter.read_value().numpy()}")
 
-        self.zoomLayer = RepeatableRandomZoom.RepeatableRandomZoom(height_factor = (-0.1, 0.25), fill_mode ="constant")
-        self.translateLayer = RepeatableRandomTranslation.RepeatableRandomTranslation(0.15, 0.15, fill_mode ='constant')
+        #self.zoomLayer = RepeatableRandomZoom.RepeatableRandomZoom(height_factor = (-0.1, 0.25), fill_mode ="constant")
+        #self.translateLayer = RepeatableRandomTranslation.RepeatableRandomTranslation(0.15, 0.15, fill_mode ='constant')
 
 
     @property
