@@ -1,4 +1,3 @@
----
 meta:
   environment: python
   toolchain:
@@ -7,6 +6,6 @@ meta:
 build:
   requirementsPath: project_requirements.txt
 run:
-  command: streamlit run ./demo_app/demo_app.py --server.port=80 --server.enableXsrfProtection=false
+  scriptName: demo_app_launcher.py
   persistenceMount: /data
   containerPort: 80
