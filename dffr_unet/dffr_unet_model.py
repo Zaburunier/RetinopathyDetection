@@ -16,7 +16,6 @@ from constants import RANDOM_SEED, IMAGE_SIZE, BATCH_SIZE
 LEARNING_RATE = 1e-03
 MOMENTUM = 0.9
 EPSILON = 1.0e-07
-DECAY = 1.0e-07
 AMSGRAD = True
 
 
@@ -29,7 +28,7 @@ class DFFRUNet(Model):
 
         self.segmentation_loss = LossBE(from_logits = False, name = "segm_loss", reduction = Reduction.SUM)
 
-        self.optimizer = Adam(learning_rate=LEARNING_RATE, beta_1=MOMENTUM, epsilon=EPSILON, amsgrad=AMSGRAD, decay=DECAY)
+        self.optimizer = Adam(learning_rate=LEARNING_RATE, beta_1=MOMENTUM, epsilon=EPSILON, amsgrad=AMSGRAD)
         self.epoch_counter = Variable(initial_value=0, dtype=int32, trainable=False)
         self.checkpoint = train.Checkpoint(model=self, optimizer=self.optimizer, epoch_counter=self.epoch_counter)
         self.checkpoint_manager = train.CheckpointManager(checkpoint=self.checkpoint, directory="..\\dffr_unet_checkpoint",
