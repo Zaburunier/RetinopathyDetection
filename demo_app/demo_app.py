@@ -44,18 +44,20 @@ def BuildModels():
 
     LoadWeightsFromYaDisk("https://disk.yandex.ru/d/eLJdaT711pJ3pQ", "classifier.h5")
     classificationModel.load_weights("classifier.h5")
+    os.remove("classifier.h5")
 
     segmentationModel = unet_builder.dffr_unet_builder.BuildDFFRUnet()
     segmentationModel.compile()
 
     LoadWeightsFromYaDisk("https://disk.yandex.ru/d/yQw4NmO_LPZHJA", "segmentator.h5")
     segmentationModel.load_weights("segmentator.h5")
+    os.remove("segmentator.h5")
 
     return (classificationModel, segmentationModel)
 
 
 def CropImg(img : Image) -> Image:
-    return st_cropper(img, box_color="#00FF00", aspect_ratio=(1, 1)).resize(constants.IMAGE_SIZE)
+    return st_cropper(img, box_color="#00FF00", aspect_ratio=(1, 1), realtime_update=False).resize(constants.IMAGE_SIZE)
 
 
 def DrawImageScoring(img : Image, container = None):
