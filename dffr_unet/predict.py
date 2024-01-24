@@ -1,5 +1,6 @@
 import tensorflow as tf
 import numpy as np
+import cv2
 from PIL import Image
 
 import constants
@@ -13,6 +14,12 @@ def predict_label(imagePath: str):
     img = get_image(imagePath)
     data = np.expand_dims(img, axis = 0)
     predictions = model.predict(data, batch_size = 1)
+
+    img /= 255.0
+    blurredImg = cv2.GaussianBlur(img, (0, 0), sigmaX=20)
+    sharpenedImg = 4 * (img - blurredImg)
+    preprocessedImg = 0.5 + sharpenedImg
+
     return predictions
 
 
@@ -56,9 +63,9 @@ def get_image(imagePath: str):
 if __name__ == "__main__":
     tf.config.run_functions_eagerly(True)
 
-    segmentationLabels = get_groundtruth("D:\\Study\\Magister\\CourseworkProject\\main\\data\\idrid\\test\\mask\\", "IDRiD_80")
+    segmentationLabels = get_groundtruth("D:\\Study\\Magister\\CourseworkProject\\main\\data\\idrid\\train\\mask\\", "IDRiD_22")
 
-    segmentation = predict_label("D:\\Study\\Magister\\CourseworkProject\\main\\data\\idrid\\test\\img\\IDRiD_80.jpg")
+    segmentation = predict_label("D:\\Study\\Magister\\CourseworkProject\\main\\data\\idrid\\train\\img\\IDRiD_22.jpg")
     segmentation_opaque = segmentation[:, :, :, :3]
     segmentation_ma_ha = segmentation[:, :, :, 0]
     segmentation_he_se = segmentation[:, :, :, 1]

@@ -12,9 +12,29 @@ import cv2
 from PIL import Image
 from PdfReportCreator import CreatePdfReport
 
+import requests
+from urllib.parse import urlencode
+
 import cnn_mlp.cnn_resnet as cnn_builder
 import dffr_unet.dffr_unet_builder as unet_builder
 import constants
+
+
+
+
+def LoadWeightsFromYaDisk(url, filename):
+    base_url = 'https://cloud-api.yandex.net/v1/disk/public/resources/download?'
+    public_key = url
+
+    # Получаем загрузочную ссылку
+    final_url = base_url + urlencode(dict(public_key=public_key))
+    response = requests.get(final_url)
+    download_url = response.json()['href']
+
+    # Загружаем файл и сохраняем его
+    download_response = requests.get(download_url)
+    with open(filename, 'wb') as f:  # Здесь укажите нужный путь к файлу
+        f.write(download_response.content)
 
 
 @st.cache_resource
@@ -22,8 +42,14 @@ def BuildModels():
     classificationModel = cnn_builder.BuildCNNMLPModel()
     classificationModel.compile(metrics=[])
 
+    LoadWeightsFromYaDisk("https://disk.yandex.ru/d/eLJdaT711pJ3pQ", "./weights/classifier.h5")
+    classificationModel.load_weights("./weights/classififer.h5")
+
     segmentationModel = unet_builder.dffr_unet_builder.BuildDFFRUnet()
     segmentationModel.compile()
+
+    LoadWeightsFromYaDisk("https://disk.yandex.ru/d/yQw4NmO_LPZHJA", "./weights/segmentator.h5")
+    segmentationModel.load_weights("./weights/segmentator.h5")
 
     return (classificationModel, segmentationModel)
 
@@ -124,31 +150,6 @@ def DrawImageSegmentation(img : Image, container = None):
             time.sleep(timeInterval)
 
 
-def HandleProcessor(selectedImgs, selectedTabId, imgProcessorFunc):
-    st.image(selectedImgs[selectedTabId], "Загруженный снимок")
-
-    col1, col2 = st.columns(2)
-
-    with col1:
-        selectedImgs[selectedTabId] = CropImg(selectedImgs[selectedTabId])
-    col2.image(selectedImgs[selectedTabId], "Выделенная область")
-
-    preprocessedSelectedImage = segmentator.PrepareImage(
-        np.asarray(selectedImgs[selectedTabId]) / 255.0).numpy()
-    tempMin = np.min(preprocessedSelectedImage)
-    tempMax = np.max(preprocessedSelectedImage)
-
-    st.divider()
-    image_comparison(selectedImgs[selectedTabId].copy(),
-                     (255.0 * (preprocessedSelectedImage - tempMin) / (tempMax - tempMin)).astype("uint8"),
-                     label1="До предобработки",
-                     label2="После предобработки",
-                     width=2 * constants.IMAGE_SIZE[0])
-    st.divider()
-
-    imgProcessorFunc(selectedImgs[selectedTabId].resize(constants.IMAGE_SIZE))
-
-
 def HandleClassification(selectedImgs, selectedTabId):
     st.image(selectedImgs[selectedTabId], "Загруженный снимок")
 
@@ -236,6 +237,16 @@ def HandleOptions(selectedImgs, selectedTabId, selectedFunction):
                 selectedImgs[selectedTabId] = CropImg(selectedImgs[selectedTabId])
             col2.image(selectedImgs[selectedTabId], "Выделенная область")
 
+            pdfReport = CreatePdfReport(st.session_state.patientCode,
+                                        selectedImgs[selectedTabId].resize(constants.IMAGE_SIZE), classifier,
+                                        segmentator)
+            reportBytes = pdfReport.output(name="report.pdf", dest="S").encode('latin-1')
+            st.download_button(
+                label="Загрузить отчёт",
+                data=reportBytes,
+                file_name=f"ДиагОтчёт-{st.session_state.patientCode}-{datetime.datetime.now()}.pdf",
+                mime="application/pdf")
+
             preprocessedSelectedImage = segmentator.PrepareImage(
                 np.asarray(selectedImgs[selectedTabId]) / 255.0).numpy()
             tempMin = np.min(preprocessedSelectedImage)
@@ -247,16 +258,6 @@ def HandleOptions(selectedImgs, selectedTabId, selectedFunction):
                              label2="После предобработки",
                              width=2 * constants.IMAGE_SIZE[0])
 
-            pdfReport = CreatePdfReport(st.session_state.patientCode,
-                                        selectedImgs[selectedTabId].resize(constants.IMAGE_SIZE), classifier,
-                                        segmentator)
-            reportBytes = pdfReport.output(name="report.pdf", dest="S").encode('latin-1')
-            st.download_button(
-                label="Загрузить отчёт",
-                data=reportBytes,
-                file_name=f"ДиагОтчёт-{st.session_state.patientCode}-{datetime.datetime.now()}.pdf",
-                mime="application/pdf")
-
 
 
 (classifier, segmentator) = BuildModels()
@@ -264,7 +265,6 @@ def HandleOptions(selectedImgs, selectedTabId, selectedFunction):
 st.session_state.lastReloadTime = time.time_ns()
 
 st.title("Проект 1491")
-st.title("Диагностика диабетической ретинопатии")
 
 loadOption = st.radio("Выберите опцию загрузки", ["Указание файла", "Указание папки с набором файлов"])
 selectedImgFilenames = []
