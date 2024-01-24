@@ -42,14 +42,14 @@ def BuildModels():
     classificationModel = cnn_builder.BuildCNNMLPModel()
     classificationModel.compile(metrics=[])
 
-    LoadWeightsFromYaDisk("https://disk.yandex.ru/d/eLJdaT711pJ3pQ", "./weights/classifier.h5")
-    classificationModel.load_weights("./weights/classififer.h5")
+    LoadWeightsFromYaDisk("https://disk.yandex.ru/d/eLJdaT711pJ3pQ", "classifier.h5")
+    classificationModel.load_weights("classifier.h5")
 
     segmentationModel = unet_builder.dffr_unet_builder.BuildDFFRUnet()
     segmentationModel.compile()
 
-    LoadWeightsFromYaDisk("https://disk.yandex.ru/d/yQw4NmO_LPZHJA", "./weights/segmentator.h5")
-    segmentationModel.load_weights("./weights/segmentator.h5")
+    LoadWeightsFromYaDisk("https://disk.yandex.ru/d/yQw4NmO_LPZHJA", "segmentator.h5")
+    segmentationModel.load_weights("segmentator.h5")
 
     return (classificationModel, segmentationModel)
 
@@ -266,22 +266,19 @@ st.session_state.lastReloadTime = time.time_ns()
 
 st.title("Проект 1491")
 
-loadOption = st.radio("Выберите опцию загрузки", ["Указание файла", "Указание папки с набором файлов"])
+loadOption = st.radio("Выберите опцию загрузки", ["Выбор файлов", "Указание папки с набором файлов"])
 selectedImgFilenames = []
 selectedImgs = []
-if loadOption == "Указание файла":
-    loadFullFolder = False
-
-    fileToProcessInfo = st.file_uploader("Загрузите снимок глазного дна", ["png", "jpg", "jpeg", "tif"])
-    if fileToProcessInfo is not None:
-        img = Image.open(fileToProcessInfo).resize(constants.IMAGE_SIZE)
-        img.load()
-        selectedImgs.append(img)
-        selectedImgFilenames.append(fileToProcessInfo.name)
+if loadOption == "Выбор файлов":
+    fileInfos = st.file_uploader("Загрузите снимки глазного дна", ["png", "jpg", "jpeg", "tif"], accept_multiple_files=True)
+    if fileInfos is not None:
+        for fileInfo in fileInfos:
+            img = Image.open(fileInfo).resize(constants.IMAGE_SIZE)
+            img.load()
+            selectedImgs.append(img)
+            selectedImgFilenames.append(fileInfo.name)
 
 elif loadOption == "Указание папки с набором файлов":
-    loadFullFolder = True
-
     loadPath = st.text_input("Укажите папку для загрузки")
     maxToLoad = st.number_input("Максимальное количество файлов", value = 0)
 
