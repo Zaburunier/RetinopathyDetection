@@ -4,7 +4,7 @@ from tensorflow.keras.initializers import Zeros, RandomNormal, Constant, GlorotU
 from tensorflow.keras.regularizers import L2
 from tensorflow.keras.layers import BatchNormalization, GlobalAveragePooling2D, GlobalMaxPooling2D
 
-import cnn_mlp.cnn_mlp
+import cnn_mlp.cnn_mlp_model
 from constants import IMAGE_SIZE, BATCH_SIZE, RANDOM_SEED
 
 def BuildCNNMLPModel(useBinaryOutput = False):
@@ -56,7 +56,7 @@ def BuildCNNMLPModel(useBinaryOutput = False):
                   bias_regularizer=L2(l2 = 1e-03),
                   ) (layer)
 
-    result = cnn_mlp.cnn_mlp.CNNMLP(useBinaryLabels = useBinaryOutput, inputs = inputs, outputs = layer, name ="cnn_mlp")
+    result = cnn_mlp.cnn_mlp_model.CNNMLP(useBinaryLabels = useBinaryOutput, inputs = inputs, outputs = layer, name ="cnn_mlp")
     return result
 
 
