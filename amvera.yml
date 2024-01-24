@@ -1,0 +1,12 @@
+---
+meta:
+  environment: python
+  toolchain:
+    name: pip
+    version: 3.8
+build:
+  requirementsPath: requirements.txt
+run:
+  scriptName: /demo_app/demo_app_launcher.py
+  persistenceMount: /data
+  containerPort: 80
