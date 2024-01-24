@@ -3,7 +3,6 @@ import pandas as pd
 from PIL import Image
 import os, os.path
 import numpy as np
-from scipy.ndimage import gaussian_filter
 import cv2
 from pandas import read_csv
 import multiprocessing
