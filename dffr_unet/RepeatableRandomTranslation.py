@@ -1,5 +1,5 @@
 import tensorflow as tf
-from keras.layers.preprocessing import preprocessing_utils as utils
+#from keras.layers.preprocessing import preprocessing_utils as utils
 from tensorflow.keras import backend
 from keras.engine import base_layer, base_preprocessing_layer
 
@@ -246,5 +246,5 @@ def convert_inputs(inputs, dtype=None):
             "from `keras_cv.layers`. See docs at "
             "https://keras.io/api/keras_cv/layers/"
         )
-    inputs = utils.ensure_tensor(inputs, dtype=dtype)
+    #inputs = utils.ensure_tensor(inputs, dtype=dtype)
     return inputs
