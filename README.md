@@ -5,5 +5,5 @@ MIEM HSE University project. A part of computer vision research: typical neural 
 
 
 ## Links
-Project page: https://cabinet.miem.hse.ru/#/project/1491/
-Presentation for final submission: https://disk.yandex.ru/i/7OeRpJHngm73VQ (pls download file instead of viewing through web directly)
+- Project page: https://cabinet.miem.hse.ru/#/project/1491/ 
+- Presentation for final submission: https://disk.yandex.ru/i/7OeRpJHngm73VQ (pls download file instead of viewing through web directly)
