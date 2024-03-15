@@ -1,6 +1,6 @@
 # Diabetic Retinopathy Detection
 MIEM HSE University project. A part of computer vision research: typical neural network models applied to medical images classification and segmentation. <br/> <br/>
-Университетский проект МИЭМ НИУ ВШЭ, магистратура, 2 курс. Программа для небольшого исследования возможностей нейронных сетей в классификации и сегментации медицинских изображений.
+Университетский проект МИЭМ НИУ ВШЭ, магистратура, 2 курс (2023 год). Программа для небольшого исследования возможностей нейронных сетей в классификации и сегментации медицинских изображений.
 
 
 
